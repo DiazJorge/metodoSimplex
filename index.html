@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <title>Método de 2 Fases</title>
+    <link rel="stylesheet" href="css/estilos.css">
+    <script type = "text/javascript" src = "funciones.js"></script>
+    <script type = "text/javascript" src = "http://ingenieria-industrial.net/js/jsimplex.js"></script>
+
+    <!--link rel="stylesheet" href="http://ingenieria-industrial.net/css/bootstrap.min.css">
+    <link rel="stylesheet" href="http://ingenieria-industrial.net/css/bootstrap-theme.min.css">
+    <link rel="stylesheet" href="http://ingenieria-industrial.net/css/main.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script-->
+</head>
+
+<body>
+    <div>
+        <h1>Método Simplex de 2 Fases</h1>
+    </div>
+
+    <div>
+        <form action="" method="post">
+            <label id="h1form">Problema Inicial </label><br>
+
+            <p><b>Objetivo</b><br>
+            Maximizar: <input id="idoptmaximizar" type="radio" value="V1" checked name="objetivo"><br>
+            Minimizar: <input id="idoptminimizar" type="radio" name="objetivo" value="V2"></p>
+            
+            <label> Variables: <input id="nVariables" type="text" name="txtnovariables" size="2" value="2"></label> 
+            <label> Restricciones: <input id="nRestricciones" type="text" name="txtnorestricciones" size="2" value="3"></label><br>   
+            <br>   
+                <div><button type="button" value="Preparar" onclick="preparar()" />
+                    Preparar</button>
+                </div>   
+        </form> <br><br>
+
+        <div id="lectura"> </div>
+        <div id="datos"> </div>
+        <div id="jsolucion"> </div>
+    </div>
+
+</body>
+</html>
