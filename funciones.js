@@ -152,7 +152,7 @@
             if (mayor == 1000000000 || menor == 0)
             {
                 calcularWPrima2();
-                imprimeTableau2();
+                //imprimeTableau2();
                 break;
 
             }
@@ -266,7 +266,8 @@
 function imprimeTableau2C()
     {
         var tr = document.createElement('br');
-        document.body.appendChild(tr);
+        var an = document.getElementById('content');
+        an.appendChild(tr);
         var table = document.createElement('table');
         table.id = "normal";
 
@@ -280,13 +281,14 @@ function imprimeTableau2C()
                 tr.appendChild(td);
                 table.appendChild(tr);
             }
-            document.body.appendChild(table);
+            an.appendChild(table);
         }
     }
     function imprimeTableau2()
     {
         var tr = document.createElement('br');
-        document.body.appendChild(tr);
+                var an = document.getElementById('content');
+        an.appendChild(tr);
         var table = document.createElement('table');
         table.id = "normal";
 
@@ -300,14 +302,15 @@ function imprimeTableau2C()
                 tr.appendChild(td);
                 table.appendChild(tr);
             }
-            document.body.appendChild(table);
+            an.appendChild(table);
         }
     }
 
     function imprimeTableau()
     {
         var tr = document.createElement('br');
-        document.body.appendChild(tr);
+                var an = document.getElementById('content');
+        an.appendChild(tr);
         var table = document.createElement('table');
         table.id = "normal";
 
@@ -321,7 +324,7 @@ function imprimeTableau2C()
                 tr.appendChild(td);
                 table.appendChild(tr);
             }
-            document.body.appendChild(table);
+            an.appendChild(table);
         }
     }
 

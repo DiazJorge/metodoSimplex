@@ -91,6 +91,8 @@
                     }
 
     #main-content {
+        align-content: center;
+        text-align: : justify;
         background: white;
         width: 95%;
         max-width: 1000px;
@@ -104,6 +106,7 @@
         }
 
     #main-footer {
+        position: relative;
         background: #333;
         color: white;
         text-align: center;
@@ -111,6 +114,7 @@
         margin-top: 40px;
     }
         #main-footer p {
+            position: relative;
             margin: 0;
         }
         
@@ -159,3 +163,11 @@
         font-family: cursive;
         font-size: 13px;
     }
+#normal {
+  width: 250px;
+  border: 1px solid #000;
+  border-collapse: collapse;
+}
+#normal tr, #normal td {
+  border: 1px solid #000;
+}
