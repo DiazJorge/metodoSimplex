@@ -1,9 +1,8 @@
     var a_problema = new Array();
     var tableauA = new Array ();
     var tableau2 = new Array();
+    var tableau2C = new Array();
     var zeta = new Array();
-    var novariables;
-    var norestricciones;
     var objetivo=1;
     var nVar, nRes;
     var contS=0, contA=0, contE=0, total=0;
@@ -11,49 +10,92 @@
     var is = 0, ia = 0;
     var posicionArtif = new Array();
     var eliminarPosArtifi = new Array();
-
-    function generaTabla()
+    var contVar;
+    
+    function generarSolucion()
     {
         for ( i = 0; i < nRes; i++ )
-        {
             if (a_problema[i][nVar+1]=="<=" || a_problema[i][nVar+1] == "=")
-                contS += 1;
-            else 
-                contS += 2;
-        }
-
-        total = contS + nVar; 
-        //Matriz para el primer tableau
-
-        tableauA = new Array(nRes);
-        for ( i = 0; i <= nRes; i++ )
-            tableauA[i] = new Array(total + 2);
-
-        for (i=0; i <= nRes;i++)
-            for (j=0; j <= total+1;j++)
-                tableauA[i][j] = 0;
-
-        //configuracion inicial
-        agregarVariables();
-        calcularWPrima();
+                    contS += 1;
+            else    contS += 2;
+        total = contS + nVar;
         
-        //Listo el primer tableau, podemos iniciar con la FASE 1
-        faseUno();
-
-        //Creamos el tableau para la segunda fase
+        //imprime(a_problema, nRes, nVar+1);
+        inicializarMatriz(tableauA, nRes, total+2);
+        //imprimeTableau(tableauA, nRes, total+1);
+        agregarVariables(tableauA);
+        imprimeTableau(tableauA, nRes, total+1);
+        calcularWPrima(tableauA);
+        imprimeTableau(tableauA, nRes, total+1);
+        faseUno(tableauA);
+        imprimeTableau(tableauA, nRes, total+1);
         iniciarFase2();
+        imprimeTableau(tableau2, nRes, total - eliminarPosArtifi.length+1);
         faseDos();
     }
 
+
+    function calcularWPrima(matriz)
+    {
+        var suma = 0;
+        for (i = 0; i <= total+1; i++)
+        {
+            suma = 0;
+            for (j=0; j < posicionArtif.length;j++)
+            {
+                suma += parseInt(matriz[posicionArtif[j]][i]);
+            }
+            matriz[0][i]=suma;
+        }
+    }
+
+    function agregarVariables(matriz)
+    {
+        contVar = nVar;
+        //inicializarMatriz(matriz, nRes, total+2);
+        //imprime(matriz, nRes, total);
+        //El tableau contiene los datos leídos de entrada
+        for ( i = 1; i <= nRes; i++ )
+        {
+            for ( j = 0; j <= nVar; j++ )
+            {
+                if (j==nVar)
+                    matriz[i][total+1] = a_problema[i-1][j];
+                else matriz[i][j+1] = a_problema[i-1][j];
+            }
+        }
+
+         posicionArtif.push(0);
+         
+        //Agregar variables de holgura, exceso y artificiales, en el orden de aparicion
+        for ( i = 0; i < nRes; i++)
+        {
+            if (a_problema[i][nVar+1]=="<=")
+                matriz[i+1][++contVar] = 1;
+
+            else if (a_problema[i][nVar+1]=="=")
+            {
+                matriz[i+1][++contVar] = 1;
+                eliminarPosArtifi.push(contVar);
+                matriz[0][contVar] = -1;
+                posicionArtif.push(i+1);
+            }
+
+            else if (a_problema[i][nVar+1] == ">=")
+            {
+                matriz[i+1][++contVar] = -1;
+                matriz[i+1][++contVar] = 1;
+                eliminarPosArtifi.push(contVar);
+                matriz[0][contVar] = -1;
+                posicionArtif.push(i + 1);
+            }
+        }
+        matriz[0][0] = 1.0;
+    }
+ 
     function iniciarFase2()
     {
-        for (var i = 0; i <= nRes; i++)
-        {
-            tableau2[i]= new Array();
-            for (var j=0; j <= total - eliminarPosArtifi.length+1; j++)
-                tableau2[i][j]=0;
-        }
-        
+        inicializarMatriz(tableau2, nRes+1, total - eliminarPosArtifi.length+2);
         for(var i=0; i<nRes;i++)
         {
             var aux=0;
@@ -65,30 +107,246 @@
                 else aux++;
             }
         }
-
         tableau2[0][0]=1; //valor de z
 
         for(var j=0; j<nVar;j++)
               tableau2[0][j+1] = -1* zeta[j];
+    }
 
-      }
 
-      var tableau2C = new Array();
-      
+    function faseDos()
+    {
+        ajuste(tableau2, nRes, zeta.length,total - eliminarPosArtifi.length+1);
+        imprimeTableau(tableau2, nRes, total - eliminarPosArtifi.length+1);
+        finalizarFase(tableau2);
+        imprimeTableau(tableau2, nRes, total - eliminarPosArtifi.length+1);
+        
+    }
+
+    function ajuste(matriz, nf, nc, nc2)
+    {
+        for (var j=1; j <= nc; j++)
+            if (matriz[0][j] < 0)
+            {
+                var aux = matriz[0][j];
+                for (var i = 1; i <= nf; i++)
+                    if (matriz[i][j]==1)
+                        for (var k=0; k <= nc2;  k++)
+                            tableau2[0][k]+=tableau2[i][k]*-1*aux;
+            }
+    }
+
+    function finalizarFase(tableau2)
+    {
+        var bandera = 1;
+        while (bandera!=0)
+        {
+            var mayor = 0;
+            var menor = 1000000000;
+            var myMap = new Map();
+            var entra, sale;
+            bandera = 0;
+
+            imprimeTableau(tableau2, nRes, total - eliminarPosArtifi.length+1);
+            if (objetivo == 1)
+            {
+                for (var j=1 ; j<=total - eliminarPosArtifi.length+2;j++)
+                {
+                    if (tableau2[0][j] < 0 && tableau2[0][j] < menor) 
+                    {
+                        menor = tableau2[0][j];
+                        entra = j;
+                        bandera = 1;
+                    }
+                }   
+            }
+            else if (objetivo == 0 )
+            {
+                for (var j=1; j<=total - eliminarPosArtifi.length+2;j++)
+                {
+                    if (tableau2[0][j] > 0 && tableau2[0][j]>mayor )
+                    {
+                        mayor = tableau2[0][j];
+                        entra = j;
+                        bandera = 1;
+                    }
+                }
+            }
+
+            for (var i = 0; i < nRes; i++)
+            {
+                if (tableau2[i+1][entra] >  0)
+                    myMap.set(tableau2[i+1][total-eliminarPosArtifi.length+1]/tableau2[i+1][entra], i+1);
+            }
+
+            sale = myMap.values().next().value;
+            hacerUno = parseFloat(tableau2[sale][entra]);
+
+            for (var j=0; j<=total - eliminarPosArtifi.length+1;j++)
+            {
+                tableau2[sale][j]/=hacerUno;
+                tableau2[sale][j] = parseFloat(tableau2[sale][j]);
+            }
+
+            for(var i=0; i<=nRes; i++)
+            {
+                var vector = new Array();
+                if(tableau2[i][entra]!=0 && i!=sale)
+                {
+                    var aux = tableau2[i][entra];
+                    for(var j=0; j<=total+1; j++){
+                        vector.push(tableau2[sale][j]*aux);
+                        tableau2[i][j]-=vector[j];
+                        tableau2[i][j] = parseFloat(tableau2[i][j]);
+                    }
+                }
+            }
+        }
+
+    }
+
+    function preparar()
+    {
+        nVar = parseInt(document.getElementById("nVariables").value);
+        nRes = parseInt(document.getElementById("nRestricciones").value);
+        var s="";
+
+        if (nVar < 2)
+        {
+            alert("Se requieren como mínimo dos variables");
+            document.getElementById("nVariables").focus();
+            return 0;
+        }
+
+        if (nRes < 1)
+        {
+            alert("Se requiere como mínimo una restricción");
+            document.getElementById("nRestricciones").focus();
+            return 0;
+         }
+
+        if (document.getElementById("idoptmaximizar").checked == true)
+                objetivo = 1;
+        else    objetivo = 0;
+
+        s += "Coeficientes del problema:<br> <table > <tr> <td></td>";       
+
+        for (var i = 0; i < nVar; i++)
+            s += "<td >X<sub>" +i+ "</sub></td>";
+        s += "<td></td> <td></td></tr><tr>";
+
+        if (objetivo==1)    
+                s += "<td>Max Z = </td>";
+        else    s += "<td>Min Z = </td>";          
+              
+        for(var j = 0; j < nVar; j++)
+            s += "<td><input type='number name='txtx"+ j + "' id='txtx" + j +"'></td> ";         
+        s += "<td></td><td></td></tr>";
+
+        for (var i = 0; i < nRes; i++)
+        {
+            s += "<tr><td> Restricción "+ i +" </td>";
+            for (var j = 0; j < nVar; j++)
+                s += "<td><input type='number name='txtr"+i+"x"+j+"' id='txtr"+i+"x"+j+"' ></td>";
+            s += "<td><select name='cmbr"+i+"' id='cmbr"+i+"'><option selected value='<=''><=</option>";
+            s += "<option value='>='> >= </option><option value='='> = </option></select></td>";
+            s += "<td><input type='number name='txtrhs"+i+"' id='txtrhs"+i+"' ></td></tr>";
+        }       
+        s += "</table>";
+        document.getElementById("lectura").innerHTML = s;
+
+        s = "<div><button onclick='resolver()'>Resolver</button></div>";
+        document.getElementById('datos').innerHTML = s;     
+    }
+
+    function resolver()
+    {
+        var s = "";
+
+        inicializarMatriz(a_problema, nRes, nVar+1);
+        
+        for (var i = 0; i < nVar; i++)
+        {
+            if ( document.getElementById( "txtx" + i).value == "" )
+                    zeta[i] = 0.0;
+            else zeta[i] = parseFloat( document.getElementById( "txtx" + i).value );
+        }
+            
+        for (var i = 0; i < nRes; i++)
+        {
+            for (var j = 0; j < nVar; j++)
+            {
+                if ( document.getElementById("txtr" + i + "x" + j).value == "")
+                        a_problema[i][j] = 0.0;
+                else    a_problema[i][j] = parseFloat(document.getElementById("txtr" + i + "x" + j).value);
+            }
+            
+            if (document.getElementById("txtrhs" + i).value == "")
+                    a_problema[i][nVar] = 0.0;
+            else    a_problema[i][nVar] = parseFloat(document.getElementById("txtrhs" + i).value); 
+            a_problema[i][nVar+1] = document.getElementById("cmbr" + i).value;   
+        }
+        generarSolucion();   
+    }
+
+    function inicializarMatriz(matriz, nf, nc)
+    {
+        for ( i = 0; i <= nf; i++ )
+        {
+            matriz[i] = new Array();
+            for ( j = 0; j <= nc; j++ )
+                matriz[i][j] = 0;
+        }
+
+    }
+
+    function imprimeTableau( matriz, nf, nc )
+    {
+        var br = document.createElement('br');
+        var an = document.getElementById('content');
+        document.body.appendChild(br);
+        var table = document.createElement('table');
+        table.id = "normal";
+        
+
+        for (var k = 0; k <= nf; k++)
+        {
+            var tr =  document.createElement('tr');
+            for ( var l = 0; l <= nc; l++)
+            {
+                var td = document.createElement('td');
+                var text =  document.createTextNode(matriz[k][l].toFixed(5));
+                td.appendChild(text);
+                tr.appendChild(td);
+                table.appendChild(tr);
+            }
+            document.body.appendChild(table);
+        }
+    }
+
+
+    function imprime(matriz, nr, nc)
+    {
+        document.write("<br>");
+        for (var k =0; k <= nr; k++){
+            for (var l=0; l <= nc; l++)
+                document.write(matriz[k][l]);
+            document.write("<br>");
+        }
+    }
+
+
     function calcularWPrima2()
     {
-        for (var i=0; i<= nRes; i++)
-            tableau2C[i]=new Array();
-        for (var i=0; i<=nRes;i++)
-            for (j=0;j<=total - eliminarPosArtifi.length+1;j++)
-                tableau2C[i][j] = 0;
+        inicializarMatriz(tableau2C, nRes+1, total - eliminarPosArtifi.length+2);
         tableau2C[0][0]=1;
-        console.log(zeta.length);
+
+        //console.log(zeta.length);
         for(var k=1; k<=zeta.length; k++)
         {
             if(tableau2[0][k]!=0 )
             {
-                //imprimeTableau2();
+                //imprimeTableau(tableau2, nRes, total - eliminarPosArtifi.length+1);
                 var aux = tableau2[0][k];
                 for (i=1;i<=nRes;i++)
                 {
@@ -102,401 +360,81 @@
             }
         
         }
+
         for (var i=1; i<=nRes;i++)
             for (j=0;j<=total - eliminarPosArtifi.length+1;j++)
                 tableau2C[i][j] = tableau2[i][j];
             tableau2C[0][2]=0;
-            imprimeTableau2C();
+
+            imprimeTableau(tableau2C, nRes, total - eliminarPosArtifi.length+1);
         
     }
 
-    function faseDos()
-    {
-        var bandera = 1;
-        while (bandera!=0)
-        {
-            var mayor = 0;
-            var menor = 1000000000;
-            var myMap = new Map();
-            var entra, sale;
-            bandera = 0;
-
-            imprimeTableau2();
-            if (objetivo == 1)
-            {
-                for (var j=1; j<=total - eliminarPosArtifi.length+1;j++)
-                {
-                    if (tableau2[0][j] < 0 && tableau2[0][j] < menor)
-                    {
-                        menor = tableau2[0][j];
-                        entra = j;
-                        bandera = 1;
-                    }
-                    else menor = 0;
-                }   
-            }
-            else
-            {
-                for (var j=1; j<=total - eliminarPosArtifi.length+1;j++)
-                {
-                    if (tableau2[0][j] > 0 && tableau2[0][j]>mayor)
-                    {
-                        mayor = tableau2[0][j];
-                        entra = j;
-                        bandera = 1;
-                    }
-                    else mayor = 1000000000;
-                }
-            }
-
-            if (mayor == 1000000000 || menor == 0)
-            {
-                calcularWPrima2();
-                //imprimeTableau2();
-                break;
-
-            }
-
-            for (var i = 0; i < nRes; i++)
-            {
-                if (tableau2[i+1][entra] >0)
-                    myMap.set(tableau2[i+1][total-eliminarPosArtifi.length+1]/tableau2[i+1][entra], i+1);
-            }
-            sale = myMap.values().next().value;
-            hacerUno = parseFloat(tableau2[sale][entra]);
-
-            for (var j=0; j<=total - eliminarPosArtifi.length+1;j++)
-            {
-                tableau2[sale][j]/=hacerUno;
-                tableau2[sale][j] = parseFloat(tableau2[sale][j]).toFixed(2);
-            }
-
-            for(var i=0; i<=nRes; i++)
-            {
-                var vector = new Array();
-                if(tableau2[i][entra]!=0 && i!=sale)
-                {
-                    var aux = tableau2[i][entra];
-                    for(var j=0; j<=total+1; j++){
-                        vector.push(tableau2[sale][j]*aux);
-                        tableau2[i][j]-=vector[j];
-                        tableau2[i][j] = parseFloat(tableau2[i][j]).toFixed(2);
-                    }
-                }
-            } 
-        }
-
-    }
-
     //Calculamos la primera fase con el tableauA
-    function faseUno ()
+    function faseUno (matriz)
     {
-        var bandera = 1;
+        var bandera = 1;   
+
         while ( bandera != 0 )
         {
-            if (Math.abs(tableauA[0][total+1]-0)<=0.01)
-                break;
-
-            var mayor = 0;
-            var menor = 1000000000;
+            var mayor = 0.0;
+            var menor = 1000000000.0;
             var entraMax, saleMin, hacerUno;
             bandera = 0;
 
             //Imprimimos el tableau actual
-            imprimeTableau();
+            imprimeTableau(matriz, nRes, total + 1);
             //Seleccionamos la variable de entrada
-            for (j=1; j<=total;j++)
+            for (j = 1; j <= total; j++)
             {
-                if (tableauA[0][j] > 0 && tableauA[0][j]>mayor)
+                if (matriz[0][j] > 0 && matriz[0][j] > mayor)
                 {
-                    mayor = tableauA[0][j];
+                    mayor = matriz[0][j];
                     entraMax = j;
                     bandera = 1;
                 }
             }
 
             //Seleccion de la variable de salida
-            for (i=1;i <= nRes;i++ )
+            for (i = 1;i <= nRes; i++ )
             {
-                if (tableauA[i][entraMax] > 0)
+                if ( entraMax > 0 && matriz[i][entraMax] > 0)
                 {
-                    if (tableauA[i][total+1]/tableauA[i][entraMax] < menor)
+                    if (matriz[i][total+1] / matriz[i][entraMax] < menor)
                     {
-                        menor = tableauA[i][total+1]/tableauA[i][entraMax];
+                        menor = parseFloat(matriz[i][total+1] / matriz[i][entraMax]);
                         saleMin = i;
                     }
                 }
             }
 
             // Calculamos las variables de la siguiente iteracion
-            var hacerUnoA = tableauA[saleMin][entraMax];
-            hacerUno = parseFloat(hacerUnoA).toFixed(3);
+            var hacerUnoA = matriz[saleMin][entraMax];
+            hacerUno = parseFloat(hacerUnoA);
+            //console.log(hacerUno);
 
             for(var j=1; j<=total+1; j++)
             {
-                tableauA[saleMin][j]/=hacerUno;
-                tableauA[saleMin][j] = parseFloat(tableauA[saleMin][j]).toFixed(2);
+                matriz[saleMin][j]/=hacerUno;
+                //matriz[saleMin][j] = parseFloat(matriz[saleMin][j]);
             }
 
-            for(var i=0; i<=nRes; i++)
+            //imprimeTableau(matriz, nRes, total+1);
+        
+            for(var i = 0; i <= nRes; i++)
             {
                 var vector = new Array();
-                if(tableauA[i][entraMax]!=0 && i!=saleMin)
+                if(matriz[i][entraMax] != 0 && i != saleMin)
                 {
-                    var aux = tableauA[i][entraMax];
-                    for(var j=0; j<=total+1; j++){
-                        vector.push(tableauA[saleMin][j]*aux);
-                        tableauA[i][j]-=vector[j];
-                        tableauA[i][j] = parseFloat(tableauA[i][j]).toFixed(2);
+                    var aux = matriz[i][entraMax];
+                    for(var j = 0; j <= total+1; j++){
+                        //vector.push(matriz[saleMin][j]*aux*-1);
+                        matriz[i][j]+=matriz[saleMin][j]*aux*-1;
+                        if (matriz[i][j]<=2.220446049250313e-10 && matriz[i][j] >= -4.440892098500626e-10)
+                           matriz[i][j]=0;
+                        //matriz[i][j] = parseFloat(matriz[i][j]);
                     }
                 }
             }
-
         }
     }
-
-    //Revisar este pedo nadamás para ver que onda con los ajustes y redondeos
-    function redondeo(numero, decimales)
-    {
-        var flotante = parseFloat(numero);
-        var resultado = Math.round(flotante*Math.pow(10,decimales)) / Math.pow(10,decimales);
-        return resultado;
-    }
-
-function imprimeTableau2C()
-    {
-        var tr = document.createElement('br');
-        var an = document.getElementById('content');
-        an.appendChild(tr);
-        var table = document.createElement('table');
-        table.id = "normal";
-
-        for (var k = 0; k <=nRes; k++){
-            var tr =  document.createElement('tr');
-            for ( var l = 0; l <= total- eliminarPosArtifi.length +1; l++)
-            {
-                var td = document.createElement('td');
-                var text =  document.createTextNode(tableau2C[k][l]);
-                td.appendChild(text);
-                tr.appendChild(td);
-                table.appendChild(tr);
-            }
-            an.appendChild(table);
-        }
-    }
-    function imprimeTableau2()
-    {
-        var tr = document.createElement('br');
-                var an = document.getElementById('content');
-        an.appendChild(tr);
-        var table = document.createElement('table');
-        table.id = "normal";
-
-        for (var k = 0; k <=nRes; k++){
-            var tr =  document.createElement('tr');
-            for ( var l = 0; l <= total- eliminarPosArtifi.length +1; l++)
-            {
-                var td = document.createElement('td');
-                var text =  document.createTextNode(tableau2[k][l]);
-                td.appendChild(text);
-                tr.appendChild(td);
-                table.appendChild(tr);
-            }
-            an.appendChild(table);
-        }
-    }
-
-    function imprimeTableau()
-    {
-        var tr = document.createElement('br');
-                var an = document.getElementById('content');
-        an.appendChild(tr);
-        var table = document.createElement('table');
-        table.id = "normal";
-
-        for (var k = 0; k <=nRes; k++){
-            var tr =  document.createElement('tr');
-            for ( var l = 0; l <= total+1; l++)
-            {
-                var td = document.createElement('td');
-                var text =  document.createTextNode(tableauA[k][l]);
-                td.appendChild(text);
-                tr.appendChild(td);
-                table.appendChild(tr);
-            }
-            an.appendChild(table);
-        }
-    }
-
-
-    function agregarVariables()
-    {
-        var seleccion;
-        var contVar = nVar+1;
-        //El tableau contiene los datos leídos de entrada
-        for ( i = 1; i <= nRes; i++ )
-        {
-            for ( j = 0; j <= nVar; j++ )
-            {
-                if (j==nVar)
-                    tableauA[i][total+1]=a_problema[i-1][j];
-                else tableauA[i][j+1] = a_problema[i-1][j];
-            }
-        }
-
-         posicionArtif.push(0);
-         
-        //Agregar variables de holgura, exceso y artificiales, en el orden de aparicion
-        for ( i = 0; i < nRes; i++)
-        {
-            if (a_problema[i][nVar+1]=="<=")
-                tableauA[i+1][contVar++] = 1;
-
-            else if (a_problema[i][nVar+1]=="="){
-                tableauA[i+1][contVar++] = 1;
-                eliminarPosArtifi.push(contVar-1);
-                tableauA[0][contVar-1] = -1;
-                posicionArtif.push(i+1);
-            }
-
-            else if (a_problema[i][nVar+1] ==">="){
-                tableauA[i+1][contVar++] = -1;
-                tableauA[i+1][contVar++] = 1;
-                eliminarPosArtifi.push(contVar-1);
-                tableauA[0][contVar-1]=-1;
-                posicionArtif.push(i+1);
-            }
-        }
-        tableauA[0][0] = 1;
-    }
-
-    function calcularWPrima()
-    {
-        var suma = 0;
-        for (i = 0; i <= total+1; i++)
-        {
-            suma = 0;
-            for (j=0; j < posicionArtif.length;j++)
-            {
-                suma += parseInt(tableauA[posicionArtif[j]][i]);
-            }
-            tableauA[0][i]=suma;
-        }
-    }
-        
-    function preparar()
-    {
-        novariables= document.getElementById("nVariables").value;
-        norestricciones = document.getElementById("nRestricciones").value;
-        var s="";
-        var i,j,k;
-
-        if (novariables < 2)
-        {
-            alert("Se requieren como mínimo dos variables");
-            document.getElementById("nVariables").focus();
-            return 0;
-        }
-
-        if (norestricciones < 1)
-        {
-            alert("Se requiere como mínimo una restricción");
-            document.getElementById("nRestricciones").focus();
-            return 0;
-         }
-
-        if (document.getElementById("idoptmaximizar").checked == true)
-                objetivo = 1;
-        else    objetivo = 0;
-
-        s += "Coeficientes del problema:<br> <table > <tr> <td></td>";       
-
-        for (i = 0; i < novariables; i++)
-            s += "<td >X<sub>" +i+ "</sub></td>";
-        s += "<td></td> <td></td></tr><tr>";
-
-        if (objetivo==1)    
-                s += "<td>Max Z = </td>";
-        else    s += "<td>Min Z = </td>";          
-              
-        for(j = 0; j < novariables; j++)
-            s += "<td><input type='text name='txtx"+ j + "' id='txtx" + j +"' value='6'></td> ";         
-        s += "<td></td><td></td></tr>";
-
-        for (i = 0; i < norestricciones; i++)
-        {
-            s += "<tr><td> Restricción "+i+" </td>";
-            for (j = 0; j < novariables; j++)
-                s += "<td><input type='text name='txtr"+i+"x"+j+"' id='txtr"+i+"x"+j+"' value='2'></td>";
-            s += "<td><select name='cmbr"+i+"' id='cmbr"+i+"'><option selected value='<=''><=</option>";
-            s += "<option value='>='> >= </option><option value='='> = </option></select></td>";
-            s += "<td><input type='text name='txtrhs"+i+"' id='txtrhs"+i+"' value='3'></td></tr>";
-        }       
-        s += "</table>";
-        document.getElementById("lectura").innerHTML = s;     
-        tomarDatos();     
-    }
-      
-    function tomarDatos()
-    {
-        var i, j, aux, s="";
-
-        s= "<br><br>Mostrar Iteraciones<input type='checkbox' name='chkiteraciones' checked  value='ON' id='chkiteraciones'><br><br>";
-        s= s+"<div><button onclick='resolver()'>Resolver</button></div>";
-
-        document.getElementById('datos').innerHTML = s;
-    }
-
-    function resolver()
-    {
-        var s = "";
-        var i, j, k;
-        //var objetivo = 0;
-        var generarreporte = false;
-
-        nVar = parseInt(document.getElementById("nVariables").value);
-        nRes = parseInt(document.getElementById("nRestricciones").value);
-
-        for ( i = 0; i < nRes; i++ )
-        {
-            a_problema[ i ] = new Array();
-            for ( j = 0; j <= nVar+1; j++ )
-                a_problema[ i ][ j ] = 0;
-        }
-        
-        for ( i = 0; i < nVar; i++ )
-        {
-            if ( document.getElementById( "txtx" + i).value == "" )
-                    zeta[i] = 0;
-            else zeta[i] = parseFloat( document.getElementById( "txtx" + i).value );
-        }
-            
-        for ( i = 0; i < nRes; i++ )
-        {
-            for ( j = 0; j < nVar; j++ )
-            {
-                if ( document.getElementById("txtr" + i + "x" + j).value == "")
-                        a_problema[i][j] = 0;
-                else    a_problema[i][j] = parseFloat(document.getElementById("txtr" + i + "x" + j).value);
-            }
-            
-            if (document.getElementById("txtrhs" + i).value == "")
-                    a_problema[i][nVar] = 0;
-            else    a_problema[i][nVar] = parseFloat(document.getElementById("txtrhs" + i).value); 
-            a_problema[i][nVar+1] = document.getElementById("cmbr" + i).value;   
-        }
-
-        generaTabla();   
-    }
-
-    function imprime()
-    {
-        document.write("<br>");
-        
-        for (var k =0; k < nRes;k++){
-            for (var l=0; l < total+2;l++)
-                document.write(tableauA[k][l]);
-            document.write("<br>");
-        }
-    }
-

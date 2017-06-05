@@ -169,5 +169,14 @@
   border-collapse: collapse;
 }
 #normal tr, #normal td {
+    background: #e8edff;
   border: 1px solid #000;
 }
+ 
+
+/*
+#normal tr, #normal td {  background: #e8edff;     border-bottom: 1px solid #fff;
+    color: #669;    border: 1px solid transparent; }
+
+#normal td:hover tr { background: #d0dafd; color: #339; }
+*/
