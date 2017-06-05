@@ -164,19 +164,29 @@
         font-size: 13px;
     }
 #normal {
+    text-align: center;
+    margin: auto;
+    align-content: center;
   width: 250px;
   border: 1px solid #000;
   border-collapse: collapse;
 }
+/*
 #normal tr, #normal td {
     background: #e8edff;
   border: 1px solid #000;
 }
- 
+ */
 
-/*
-#normal tr, #normal td {  background: #e8edff;     border-bottom: 1px solid #fff;
-    color: #669;    border: 1px solid transparent; }
+#normal tr, #normal td {
+    width: 200px;
+    background: #e8edff;     
+    border-bottom: 1px solid #fff;
+    color: #669;    
+    border: 1px solid #000; 
+}
 
-#normal td:hover tr { background: #d0dafd; color: #339; }
-*/
+#normal td:hover tr { 
+    background: #d0dafd; 
+    color: #339; 
+}
